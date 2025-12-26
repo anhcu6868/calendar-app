@@ -23,5 +23,15 @@ html {
     display: grid;
     place-items: center;
     perspective: 100rem;
+    overflow: hidden;
+}
+
+/* Mobile */
+@media (max-width: 500px) {
+    html {
+        font-size: 55%;
+        
+    }
+
 }
 
