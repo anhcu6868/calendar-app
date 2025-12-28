@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import "./CalendarApp.css"
 
 const CalendarApp = () => {
@@ -23,13 +23,27 @@ const CalendarApp = () => {
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear())
   const [selectedDate, setSelectedDate] = useState(currentDate)
   const [showEventPopup, setShowEventPopup] = useState(false)
-  const [events, setEvents] = useState([])
-  const [eventTime, setEventTime] = useState({hours: '00', minutes: "00"})
-  const [eventText, setEventText] = useState('')
+
+  const [events, setEvents] = useState(() => {
+    const savedEvents = localStorage.getItem("calendar_events")
+    if (!savedEvents) return []
+
+    return JSON.parse(savedEvents).map((event) => ({
+      ...event,
+      date: new Date(event.date), // ⚠️ convert lại Date
+    }))
+  })
+
+  const [eventTime, setEventTime] = useState({ hours: "00", minutes: "00" })
+  const [eventText, setEventText] = useState("")
   const [editingEvent, setEditingEvent] = useState(null)
 
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate()
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay()
+
+  useEffect(() => {
+  localStorage.setItem("calendar_events", JSON.stringify(events))
+}, [events])
 
   const prevMonth = () => {
     setCurrentMonth((prevMonth) => (prevMonth === 0 ? 11 : prevMonth - 1))
@@ -46,13 +60,12 @@ const CalendarApp = () => {
   const handleDayClick = (day) => {
     const clickedDate = new Date(currentYear, currentMonth, day)
     const today = new Date()
-    if(clickedDate >= today || isSameDay(clickedDate, today)) {
+    if (clickedDate >= today || isSameDay(clickedDate, today)) {
       setSelectedDate(clickedDate)
       setShowEventPopup(true)
-      setEventTime({hours: '00', minutes: '00'})
+      setEventTime({ hours: "00", minutes: "00" })
       setEventText("")
       setEditingEvent(null)
-      
     }
   }
 
@@ -68,13 +81,16 @@ const CalendarApp = () => {
     const newEvent = {
       id: editingEvent ? editingEvent.id : Date.now(),
       date: selectedDate,
-      time: `${eventTime.hours.padStart(2, '0')}:${eventTime.minutes.padStart(2, '0')}`,
+      time: `${eventTime.hours.padStart(2, "0")}:${eventTime.minutes.padStart(
+        2,
+        "0"
+      )}`,
       text: eventText,
     }
     let updatedEvents = [...events]
-    if(editingEvent) {
+    if (editingEvent) {
       updatedEvents = updatedEvents.map((event) =>
-        event.id === editingEvent.id ? newEvent : event,
+        event.id === editingEvent.id ? newEvent : event
       )
     } else {
       updatedEvents.push(newEvent)
@@ -82,7 +98,7 @@ const CalendarApp = () => {
     updatedEvents.sort((a, b) => new Date(a.date) - new Date(b.date))
 
     setEvents(updatedEvents)
-    setEventTime({hours: '00', minutes: '00'})
+    setEventTime({ hours: "00", minutes: "00" })
     setEventText("")
     setShowEventPopup(false)
     setEditingEvent(null)
@@ -91,19 +107,17 @@ const CalendarApp = () => {
   const handleEditEvent = (event) => {
     setSelectedDate(new Date(event.date))
     setEventTime({
-      hours: event.time.split(':')[0],
-      minutes: event.time.split(':')[1],
+      hours: event.time.split(":")[0],
+      minutes: event.time.split(":")[1],
     })
     setEventText(event.text)
     setEditingEvent(event)
     setShowEventPopup(true)
-
   }
 
   const handleDeleteEvent = (eventId) => {
     const updatedEvents = events.filter((event) => event.id !== eventId)
     setEvents(updatedEvents)
-
   }
 
   const handleTimeChange = (e) => {
@@ -112,7 +126,6 @@ const CalendarApp = () => {
       ...prevTime,
       [name]: value.padStart(2, "0"),
     }))
-
   }
 
   return (
